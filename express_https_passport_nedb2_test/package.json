@@ -1,0 +1,20 @@
+{
+  "name": "express_https_passport_nedb2_test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "express-session": "^1.14.1",
+    "nedb": "^1.8.0",
+    "nedb-session-store": "^1.1.1",
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0"
+  }
+}

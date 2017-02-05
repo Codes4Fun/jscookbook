@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head><title>Smallest Readable WebGL Texture Example</title></head>
+<body>
+<canvas width="640" height="480"></canvas>
+<div>log<br></div>
+
+<script type="x-shader/x-vertex" id="vsh">
+attribute vec2 pos;
+varying vec2 texCoord;
+void main()
+{
+	gl_Position = vec4(pos, 0, 1);
+	texCoord = pos + vec2(0.5, 0.5);
+}
+</script>
+
+<script type="x-shader/x-fragment" id="fsh">
+precision mediump float;
+varying vec2 texCoord;
+uniform sampler2D tex;
+void main()
+{
+	gl_FragColor = texture2D(tex, texCoord);
+}
+</script>
+
+<script>
+// get html elements
+var canvas = document.querySelector('canvas');
+var log = document.querySelector('div');
+
+// get gl context
+var gl = canvas.getContext('webgl');
+
+// create vertex shader
+var vs = gl.createShader(gl.VERTEX_SHADER);
+gl.shaderSource(vs, document.getElementById('vsh').text);
+gl.compileShader(vs)
+if (gl.getShaderParameter(vs, gl.COMPILE_STATUS))
+{
+	log.innerHTML += 'vertex shader compiled successfully<br>';
+}
+else
+{
+	log.innerHTML += gl.getShaderInfoLog(vs) + '<br>';
+}
+
+// create fragment shader
+var fs = gl.createShader(gl.FRAGMENT_SHADER);
+gl.shaderSource(fs, document.getElementById('fsh').text);
+gl.compileShader(fs);
+if (gl.getShaderParameter(fs, gl.COMPILE_STATUS))
+{
+	log.innerHTML += 'fragment shader compiled successfully<br>';
+}
+else
+{
+	log.innerHTML += gl.getShaderInfoLog(fs) + '<br>';
+}
+
+// create the shader program
+var sp = gl.createProgram();
+gl.attachShader(sp, vs);
+gl.attachShader(sp, fs);
+gl.linkProgram(sp);
+if (gl.getProgramParameter(sp, gl.LINK_STATUS))
+{
+	log.innerHTML += 'program linked successfully<br>';
+}
+else
+{
+	log.innerHTML += gl.getProgramInfoLog(sp) + '<br>';
+}
+
+// get shader parameter(s)
+var sp_pos = gl.getAttribLocation(sp, 'pos');
+var sp_tex = gl.getUniformLocation(sp, 'tex');
+
+// create vertex buffer for quad
+var vertices = new Float32Array([
+	-0.5,  0.5,
+	 0.5,  0.5,
+	 0.5, -0.5,
+	-0.5, -0.5
+]);
+var buffer = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+// view setup
+gl.viewport(0, 0, canvas.width, canvas.height);
+gl.clearColor(0, 0, 0, 1);
+
+// create 2x2 texture from Uint8Array of r,g,b,a values
+var texture = gl.createTexture();
+gl.activeTexture(gl.TEXTURE0);
+gl.bindTexture(gl.TEXTURE_2D, texture);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+	new Uint8Array([0,0,0,255, 255,0,0,255, 0,255,0,255, 255,255,0,255]));
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+// drawing
+gl.clear(gl.COLOR_BUFFER_BIT)
+gl.useProgram(sp);
+gl.uniform1i(sp_tex, 0);
+gl.enableVertexAttribArray(sp_pos);
+gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+gl.vertexAttribPointer(sp_pos, 2, gl.FLOAT, false, 0, 0);
+gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+
+</script>
+</body>
+</html>

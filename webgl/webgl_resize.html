@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas" style="border:1px solid #d3d300;width:100%;height:100%">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+var canvas = document.querySelector('canvas');
+var gl = canvas.getContext('webgl');
+
+// create vertex shader
+var vs = gl.createShader(gl.VERTEX_SHADER);
+gl.shaderSource(vs, 'attribute vec2 pos; varying vec2 texCoord; void main() { gl_Position = vec4(pos,0,1); texCoord = pos + vec2(0.5, 0.5); }');
+gl.compileShader(vs)
+// gl.getShaderParameter(vs, gl.COMPILE_STATUS)
+// gl.getShaderInfoLog(fs)
+
+// create fragment shader
+var fs = gl.createShader(gl.FRAGMENT_SHADER);
+gl.shaderSource(fs, 'precision mediump float; varying vec2 texCoord; uniform sampler2D tex; void main() { gl_FragColor = texture2D(tex, vec2(texCoord.s, texCoord.t)); }');
+gl.compileShader(fs);
+// gl.getShaderParameter(fs, gl.COMPILE_STATUS)
+// gl.getShaderInfoLog(fs)
+
+// create the shader program
+var sp = gl.createProgram();
+gl.attachShader(sp, vs);
+gl.attachShader(sp, fs);
+gl.linkProgram(sp);
+// gl.getProgramParameter(sp, gl.LINK_STATUS)
+// gl.getProgramInfoLog(sp)
+
+sp.pos = gl.getAttribLocation(sp, 'pos');
+sp.tex = gl.getUniformLocation(sp, 'tex');
+gl.useProgram(sp);
+gl.enableVertexAttribArray(sp.pos);
+
+//var pos = [-0.01,0.01, 0.01,0.01, 0.01,-0.01, 0.01,-0.01];
+var pos = new Float32Array([-0.5,0.5, 0.5,0.5, 0.5,-0.5, -0.5,-0.5]);
+var buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, pos, gl.STATIC_DRAW);
+gl.vertexAttribPointer(sp.pos, 2, gl.FLOAT, false, 0, 0);
+
+
+var texture = gl.createTexture();
+gl.activeTexture(gl.TEXTURE0);
+gl.bindTexture(gl.TEXTURE_2D, texture);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,0,0,255, 255,0,0,255, 0,255,0,255, 255,255,0,255]));
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);//gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);//gl.NEAREST);
+
+gl.uniform1i(sp.tex, 0);
+
+function draw()
+{
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clearColor(0,0,0,1)
+
+  // minimal drawing
+  gl.clear(gl.COLOR_BUFFER_BIT)
+  gl.drawArrays(gl.TRIANGLE_FAN, 0, 4);
+}
+
+
+
+function updateSize(e)
+{
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientWidth;
+  draw();
+};
+
+
+canvas.parentElement.onresize = updateSize;
+document.body.onload = updateSize;
+
+</script>
+
+</body>
+</html>
