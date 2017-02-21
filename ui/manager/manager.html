@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Document</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<style>
+html, body {
+	width: 100%;
+	height: 100%;
+	margin: 0px;
+	//overflow: hidden;
+}
+table {
+	border-spacing:0px;
+}
+td {
+	padding:0px;
+}
+textarea {
+	width: 100%;
+	height: 100%;
+	box-sizing: border-box;
+	resize: none;
+}
+
+.title {
+	background-color:black;
+	color:white;
+	padding:4px;
+	border-bottom: 1px solid lightgrey;
+}
+
+.line {
+	border-bottom: 1px solid lightgrey;
+	padding: 9px;
+}
+
+.popup {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+    width: 97%;
+    height: 97%;
+    background-color: white;
+    border-radius: 8px;
+    border: 1px solid grey;
+    padding: 8px;
+    box-shadow: 0 16px 24px 0 rgba(0,0,0,0.22),0 25px 55px 0 rgba(0,0,0,0.21) !important;
+}
+
+.left-panel {
+	width:100%;
+	height:100%;
+}
+.right-panel {
+	position:absolute;
+	left:0px;
+	top:0px;
+	width:100%;
+	height:100%;
+	background-color: white;
+}
+@media only screen and (min-width:59em){
+.left-panel {
+	float:left;
+	width:50%;
+	box-sizing: border-box;
+	border-right:1px solid lightgrey;
+	border-left:1px solid lightgrey;
+}
+.right-panel {
+	position:initial;
+	float:left;
+	width:50%;
+	box-sizing: border-box;
+	border-right:1px solid lightgrey;
+}
+#back {
+	display:none;
+}
+}
+</style>
+</head>
+
+<body>
+<div style="margin:auto;max-width:63em;height:100%">
+
+
+<div class="left-panel">
+	<div style="display:flex; flex-flow:column; height:100%">
+		<div class="title" style="flex: 0 1 auto"> Address List
+			<button style="float:right" id="add">Add</button>
+			<button style="float:right" onclick="runTest()">Test</button>
+			<button style="float:right" onclick="cleanRestart()">Clean</button>
+		</div>
+		<div style="flex: 1 1 auto; overflow:auto">
+			<table style="width:100%"><tbody id="address-list"></tbody></table>
+		</div>
+	</div>
+</div>
+
+<script>
+var addButton = document.querySelector('#add')
+addButton.onclick = function ()
+{
+	showNewAddressDialog()
+}
+var addressList = document.querySelector('#address-list')
+</script>
+
+
+
+<div id="address-dialog" class="right-panel" style="display:none">
+	<div style="display:flex; flex-flow:column; height:100%">
+		<div class="title" style="flex: 0 1 auto">
+			<button id="back">&lt;</button> Address
+			<button id="export" style="float:right">Export</button>
+		</div>
+		<div align=center style="flex: 1 1 auto; overflow:auto">
+			<table style="margin-top:1em"><tbody>
+				<tr>
+					<td class="line">Label</td>
+					<td class="line"><input id="label" type="text"></td>
+				</tr>
+				<tr>
+					<td class="line">Date Added</td>
+					<td class="line" id="date"></td>
+				</tr>
+				<tr>
+					<td class="line">Address</td>
+					<td class="line">
+						<div id="address" style="word-wrap: break-word; width: 11em;"></div>
+					</td>
+				</tr>
+				<tr><td colSpan="2" align="center" style="padding:4em">
+					<div id="qrcode"></div>
+				</td></tr>
+			</tbody></table>
+		</div>
+	</div>
+</div>
+
+<script src="qrcode.min.js"></script>
+<script>
+var idAddressDialog = document.querySelector('#address-dialog')
+var idLabel = document.querySelector('#label')
+var idDate = document.querySelector('#date')
+var idAddress = document.querySelector('#address')
+var qrcode = new QRCode("qrcode", {width:180,height:180})
+var idExport = document.querySelector('#export')
+
+idLabel.onchange = function ()
+{
+	setSelectedLabel(idLabel.value)
+}
+
+idExport.onclick = function ()
+{
+	selected.exportWIF()
+}
+
+function displaySelected()
+{
+	idLabel.value = selected.getLabel()
+
+	var date = new Date(selected.getDate())
+	idDate.textContent = date.toLocaleString()
+
+	var publicAddress = selected.getPublicKey()
+	idAddress.textContent = publicAddress
+	qrcode.makeCode(publicAddress)
+
+	setRightPanel(idAddressDialog)
+}
+
+qrcode.makeCode("12zA83enJ5dq6BNWBzWABCA5PtG1e6r9U1");
+</script>
+
+
+
+<div id="new-dialog" class="right-panel" style="display:none">
+	<div style="display:flex; flex-flow:column; height:100%">
+		<div class="title" style="flex: 0 1 auto">
+			<button id="back">&lt;</button> Add New Address
+			<button id="new-make" style="float:right">Make</button>
+		</div>
+		<div align="center" style="flex: 1 1 auto; overflow:auto">
+			<table style="margin-top:2em"><tbody>
+				<tr>
+					<td class="line">Label</td>
+					<td class="line"><input id="new-label" type="text" style="width:11em"></input></td>
+				</tr>
+				<tr>
+					<td style="padding:9px">Address</td>
+					<td style="padding:9px">
+						<div id="new-address" style="word-wrap: break-word; width: 11em;"></div>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td style="padding:9px"><button id="new-random">Random</button> <button id="new-import">Import WIF</button></td>
+				</tr>
+			</tbody></table>
+		</div>
+	</div>
+</div>
+
+<script>
+var newAddressDialog = document.querySelector('#new-dialog')
+var newIdLabel = document.querySelector('#new-label')
+var newIdAddress = document.querySelector('#new-address')
+var newIdRandom = document.querySelector('#new-random')
+var newIdImport = document.querySelector('#new-import')
+var newIdMake = document.querySelector('#new-make')
+var newAddress = null
+
+newIdRandom.onclick = function ()
+{
+	newIdAddress.textContent = newAddress.makeRandom()
+}
+
+newIdImport.onclick = function ()
+{
+	newAddress.importWIF(function (address)
+	{
+		newIdAddress.textContent = address
+	})
+}
+
+newIdMake.onclick = function ()
+{
+	newAddress.setLabel(newIdLabel.value)
+	newAddress.markDate()
+	addAddress(newAddress)
+	if (pendingMessage)
+	{
+		showMessageDialog()
+	}
+}
+
+function showNewAddressDialog()
+{
+	setSelected(null)
+	newAddress = new Address()
+	newIdLabel.value = 'New Address'
+	newAddress.setLabel('New Address')
+	newIdRandom.click()
+	addButton.style.visibility = 'hidden'
+	setRightPanel(newAddressDialog)
+}
+</script>
+
+
+
+<div id="message-dialog" class="right-panel" style="display:none;">
+	<div style="display:flex; flex-flow:column; height:100%">
+		<div class="title" style="flex: 0 1 auto">
+			<button id="back">&lt;</button> Message
+			<button id="message-decline" style="float:right">Decline</button>
+			<button id="message-sign" style="float:right">Sign</button>
+		</div>
+		<div align=center style="flex: 0 1 auto">
+			<div id="message-label"></div>
+			<div id="message-address"></div>
+		</div>
+		<pre id="message-text" style="flex: 1 1 auto; margin:0; overflow:auto; border-top: 1px solid lightgrey">
+		</pre>
+	</div>
+</div>
+
+<script>
+var messageDialog = document.querySelector('#message-dialog')
+var messageLabel = document.querySelector('#message-label')
+var messageAddress = document.querySelector('#message-address')
+var messageText = document.querySelector('#message-text')
+var messageSign = document.querySelector('#message-sign')
+var messageDecline = document.querySelector('#message-decline')
+
+var pendingMessage = false
+var message = 
+{
+	text : 'hello world',
+	address : '',
+	signature : '',
+}
+
+messageSign.onclick = function ()
+{
+	message.address = selected.getPublicKey()
+	message.signature = selected.signMessage(message.text).toString('base64')
+	
+	// verify test
+	//var signature = new Buffer(message.signature, 'base64')
+	//console.log(bitcoin.message.verify(message.address, signature, message.text))
+	//
+
+	setRightPanel(null)
+	setSelected(selected)
+}
+
+messageDecline.onclick = function ()
+{
+	setRightPanel(null)
+	setSelected(selected)
+}
+
+function updateMessageDialog()
+{
+	messageLabel.textContent = selected.getLabel()
+	messageAddress.textContent = selected.getPublicKey()
+}
+
+function showMessageDialog()
+{
+	messageText.textContent = message.text
+	updateMessageDialog()
+	setRightPanel(messageDialog)
+}
+
+function runTest()
+{
+	pendingMessage = true
+	message.text = ''
+
+	for (var i = 0; i < 15; i++)
+	{
+		message.text += 'blah '
+	}
+	message.text += '\n'
+	for (var i = 0; i < 50; i++)
+	{
+		message.text += 'blah\n'
+	}
+
+	if (addresses.length == 0)
+	{
+		showNewAddressDialog()
+	}
+	else
+	{
+		showMessageDialog()
+	}
+}
+
+</script>
+
+
+</div>
+
+
+
+<script src="modules.js"></script>
+<script>
+var bitcoin = modules.bitcoin;
+var Buffer = modules.buffer.Buffer;
+var Bip38 = modules.bip38;
+
+var bip38 = new Bip38()
+</script>
+
+<script>
+// for file saving
+var a = document.createElement('a')
+a.style.cssText = 'display:none'
+a.target = '_blank'
+document.body.appendChild(a)
+
+// for file loading
+var input = document.createElement('input')
+input.type = 'file'
+
+function Address()
+{
+	var label;
+	var date;
+	var key;
+
+	this.getLabel = function () { return label }
+	this.getDate = function () { return date }
+	this.getPublicKey = function () { return key.getAddress() }
+
+	this.setLabel = function (newLabel) { return label = newLabel }
+	this.setDate = function (newDate) { return date = newDate }
+
+	this.markDate = function ()
+	{
+		date = (new Date()).getTime()
+	}
+
+	this.makeRandom = function ()
+	{
+		key = bitcoin.ECPair.makeRandom()
+		return key.getAddress()
+	}
+
+	this.fromWIF = function (wif)
+	{
+		key = bitcoin.ECPair.fromWIF(wif)
+	}
+
+	this.toWIF = function ()
+	{
+		return key.toWIF()
+	}
+
+	this.importWIF = function (onimport)
+	{
+		input.onchange = function (e)
+		{
+			if (input.files.length == 0)
+			{
+				return;
+			}
+			var reader = new FileReader()
+			reader.onload = function ()
+			{
+				key = bitcoin.ECPair.fromWIF(reader.result)
+				onimport(key.getAddress())
+			}
+			reader.readAsText(input.files[0])
+		}
+		input.click()
+	}
+
+	this.importEncryptedWIF = function (ewif, password, onimport)
+	{
+		var wif = bip38.decrypt(ewif, password)
+		key = bitcoin.ECPair.fromWIF(wif)
+	}
+
+	this.exportWIF = function ()
+	{
+		var address = key.getAddress()
+		var wif = key.toWIF()
+		a.download = address + '.wif'
+		a.href = 'data:text/wif,' + wif
+		a.click()
+	}
+
+	this.exportEncryptedWIF = function (password)
+	{
+		var address = key.getAddress()
+		var wif = key.toWIF()
+		var ewif = bip38.encrypt(wif, password, address)
+		a.download = address + '.ewif'
+		a.href = 'data:text/wif,' + ewif
+		a.click()
+		/*var wif = key.toWIF()
+		var address = key.getAddress()
+		return bip38.encrypt(wif, password, address)*/
+	}
+
+	this.signMessage = function (message)
+	{
+		return bitcoin.message.sign(key, message)
+	}
+}
+</script>
+
+
+<script>
+var rightPanel = null;
+
+function setRightPanel(panel)
+{
+	if (rightPanel)
+	{
+		if (rightPanel == newAddressDialog)
+		{
+			addButton.style.visibility = 'visible'
+		}
+		rightPanel.style.display = 'none'
+	}
+	rightPanel = panel
+	if (panel)
+	{
+		panel.style.display = 'block'
+	}
+}
+
+function showRightPanel()
+{
+	rightPanel.style.display = 'block'
+}
+
+function hideRightPanel()
+{
+	rightPanel.style.display = 'none'
+}
+
+var backButtons = document.querySelectorAll('#back')
+for (var i = 0; i < backButtons.length; i++)
+{
+	backButtons[i].onclick = function ()
+	{
+		if (selectedPrev && !selected)
+		{
+			setSelected(selectedPrev)
+		}
+		hideRightPanel()
+	}
+}
+</script>
+
+
+<script>
+var addresses = []
+var selected = null
+var selectedPrev = null
+var selectedLabel = null
+
+function setSelected(address)
+{
+	if (selected)
+	{
+		selectedPrev = selected
+		var i = addresses.indexOf(selected)
+		addressList.children[i].style.backgroundColor = ''
+	}
+
+	selected = address
+
+	if (selected)
+	{
+		var i = addresses.indexOf(address)
+		selectedLabel = addressList.children[i].children[0]
+		addressList.children[i].style.backgroundColor = 'beige'
+
+		if (rightPanel == messageDialog)
+		{
+			updateMessageDialog()
+			showRightPanel()
+		}
+		else
+		{
+			displaySelected()
+		}
+	}
+}
+
+function setSelectedLabel(newLabel)
+{
+	selected.setLabel(newLabel)
+	selectedLabel.textContent = newLabel
+}
+
+function addAddress(address)
+{
+	addresses.push(address)
+	updateAddresses()
+	setSelected(address)
+}
+
+function listAddAddress(address)
+{
+	var tr = document.createElement('tr')
+
+	var tdLabel = document.createElement('td')
+	tdLabel.className = 'line';
+	tdLabel.textContent = address.getLabel()
+	tr.appendChild(tdLabel)
+
+	var tdPublic = document.createElement('td')
+	tdPublic.className = 'line';
+	var divPublic = document.createElement('div')
+	divPublic.style.cssText = 'word-wrap: break-word; width: 11em'
+	divPublic.textContent = address.getPublicKey()
+	tdPublic.appendChild(divPublic)
+	tr.appendChild(tdPublic)
+
+	if (address == selected)
+	{
+		selectedLabel = tdLabel
+		tr.style.backgroundColor = 'beige'
+	}
+
+	tr.onclick = function ()
+	{
+		setSelected(address)
+	}
+	addressList.appendChild(tr)
+}
+function updateAddresses()
+{
+	while (addressList.firstChild)
+	{
+		addressList.removeChild(addressList.firstChild)
+	}
+	for (var i = 0; i < addresses.length; i++)
+	{
+		listAddAddress(addresses[i])
+	}
+}
+
+function loadAddresses()
+{
+	var data = JSON.parse(localStorage.getItem('addresses'))
+	for (var i = 0; i < data.length; i++)
+	{
+		var entry = data[i]
+		var address = new Address()
+		address.setLabel(entry.label)
+		address.setDate(entry.date)
+		address.fromWIF(entry.wif)
+		addresses.push(address)
+	}
+	if (addresses.length > 0)
+	{
+		updateAddresses()
+		var selected = parseInt(localStorage.getItem('selected'))
+		if (selected != -1)
+		{
+			setSelected(addresses[selected])
+		}
+		else
+		{
+			setSelected(addresses[0])
+		}
+	}
+}
+
+function saveAddresses()
+{
+	var data = []
+	for (var i = 0; i < addresses.length; i++)
+	{
+		var address = addresses[i]
+		var entry = {
+			label : address.getLabel(),
+			date : address.getDate(),
+			wif : address.toWIF(),
+		}
+		data.push(entry)
+	}
+	localStorage.setItem('addresses', JSON.stringify(data))
+	localStorage.setItem('selected', addresses.indexOf(selected))
+}
+
+</script>
+
+<script>
+/*var textarea = document.querySelector('textarea')
+var signButton = document.querySelector('#sign')
+var cancelButton = document.querySelector('#cancel')
+
+var clientIndex = null
+
+window.addEventListener("addon-message", function(event) {
+console.log(event.detail)
+	textarea.value = event.detail.message.message
+	clientIndex = event.detail.clientIndex
+}, false)
+
+
+function sendMessage(message)
+{
+	var event = document.createEvent('CustomEvent');
+	event.initCustomEvent("addon-send", true, true, { clientIndex : clientIndex, activate: true, message : message });
+	document.documentElement.dispatchEvent(event);
+}
+
+
+signButton.onclick = function ()
+{
+	//var message = {
+	//	address : key.getAddress(),
+	//	signature : bitcoin.message.sign(key, textarea.value),
+	//};
+	//sendMessage(message);
+	sendMessage({signature : 'blahblahblah'});
+}*/
+</script>
+
+<script>
+var saveVersion = 1
+
+var version = localStorage.getItem('version')
+if (version != null)
+{
+	version = parseInt(version)
+	switch(version)
+	{
+	case saveVersion:
+		loadAddresses()
+		break
+	default:
+		alert('unknown saved data version :' + version)
+	}
+}
+if (addresses.length == 0)
+{
+	showNewAddressDialog()
+}
+
+function save()
+{
+	localStorage.setItem('version', saveVersion)
+	saveAddresses()
+}
+
+window.addEventListener('unload', function () { save() }, true)
+
+function cleanRestart()
+{
+	localStorage.clear()
+	save = function () {}
+}
+</script>
+
+</body>
+</html>
