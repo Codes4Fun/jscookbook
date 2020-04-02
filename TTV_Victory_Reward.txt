@@ -1,0 +1,252 @@
+
+// javascript console script for twitch streamer
+// automatically detect warzone victory and give bitties
+
+var temp = {}
+temp.video = document.querySelector('video');
+temp.canvas = document.createElement('canvas');
+temp.canvas.width = 1280;
+temp.canvas.height = 720;
+temp.canvas.style.position = 'absolute'
+temp.canvas.style.zIndex = '1900'
+temp.ctx = temp.canvas.getContext('2d');
+temp.display = function () {
+	document.body.appendChild(temp.canvas)
+	temp.ctx.drawImage(temp.video, 0,0, 1280,720);
+}
+temp.hide = function () {
+	document.body.removeChild(temp.canvas)
+}
+
+temp.textarea = document.querySelector('textarea[data-a-target="chat-input"]');
+temp.chatButton = document.querySelector('button[data-a-target="chat-send-button"]');
+
+temp.reward20 = function () {
+	document.querySelector('button[data-a-target="bits-button"]').click();
+	setTimeout(function () {
+
+	if (!document.querySelector('button[data-a-target="cheermote-Anon1000"]')) {
+		document.querySelector('.tw-checkbox__input').click();
+	}
+	setTimeout(function () {
+	var cheerbutt = document.querySelector('button[data-a-target="cheermote-Anon1000"]');
+	cheerbutt.setAttribute("data-key", "Anon:2000")
+	cheerbutt.click()
+	
+	setTimeout(function () {
+	temp.chatButton.click();
+	}, 1000);
+	}, 1000);
+	}, 1000);
+}
+
+temp.setNativeValue = function (element, value) {
+  const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
+  const prototype = Object.getPrototypeOf(element);
+  const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+  
+  if (valueSetter && valueSetter !== prototypeValueSetter) {
+  	prototypeValueSetter.call(element, value);
+  } else {
+    valueSetter.call(element, value);
+  }
+}
+temp.chat = function (msg) {
+	temp.setNativeValue(temp.textarea, msg);
+	temp.textarea.dispatchEvent(new Event('input', { bubbles: true }));
+	setTimeout(function () {
+		temp.chatButton.click();
+	}, 250);
+}
+
+temp.vicMin = [113, 174, 205];
+temp.vicMax = [137, 198, 239];
+
+temp.checkColor = function (r, g, b, max, min) {
+	if (r > max[0]) return 1;
+	if (g > max[1]) return 2;
+	if (b > max[2]) return 3;
+	if (r < min[0]) return 4;
+	if (g < min[1]) return 5;
+	if (b < min[2]) return 6;
+	return 0;
+}
+
+temp.log = false;
+temp.checkPixel = function (i, pos, max, min) {
+	var x = pos[i][0]/1280*temp.video.videoWidth;
+	var y = pos[i][1]/720*temp.video.videoHeight;
+	temp.ctx.drawImage(temp.video, x,y, 1,1, 0,0, 1,1);
+	var color = temp.ctx.getImageData(0,0, 1,1).data;
+	var res = temp.checkColor(color[0], color[1], color[2], max, min);
+	if (temp.log) {
+		switch(res) {
+		case 1: console.log('['+i+'] ('+x+','+y+') r = ' + color[0] + ' > ' + max[0]); break;
+		case 2: console.log('['+i+'] ('+x+','+y+') g = ' + color[1] + ' > ' + max[1]); break;
+		case 3: console.log('['+i+'] ('+x+','+y+') b = ' + color[2] + ' > ' + max[2]); break;
+		case 4: console.log('['+i+'] ('+x+','+y+') r = ' + color[0] + ' < ' + min[0]); break;
+		case 5: console.log('['+i+'] ('+x+','+y+') g = ' + color[1] + ' < ' + min[1]); break;
+		case 6: console.log('['+i+'] ('+x+','+y+') b = ' + color[2] + ' < ' + min[2]); break;
+		}
+	}
+	return res;
+}
+
+temp.checkPixels = function (pos, max, min) {
+	for (var i = 0; i < pos.length; i++) {
+		var res = temp.checkPixel(i, pos, max, min)
+		if (res) {
+			return [i, res];
+		}
+	}
+	return 0;
+}
+
+
+temp.checkVLine = function (maxMatch, minMatch, x, y, h, max, min) {
+	x = x/1280*temp.video.videoWidth;
+	y = y/720*temp.video.videoHeight;
+	temp.ctx.drawImage(temp.video, x,y, 1,h, 0,0, 1,h);
+	var color = temp.ctx.getImageData(0,0, 1,h).data;
+	var state = 0;
+	var count = 0;
+	for (var i = 0; i < h; i++) {
+		var offset = i * 4;
+		var res = temp.checkColor(color[offset], color[offset+1], color[offset+2], max, min);
+		if (temp.log) console.log(i, res);
+		switch(state) {
+		case 0:
+			// look for fail
+			if (res) {
+				state = 1;
+			}
+			break;
+		case 1:
+			// look for success
+			if (!res) {
+				state = 2;
+				count = 1;
+			}
+			break;
+		case 2:
+			if (!res) {
+				count++;
+				if (count > maxMatch) {
+					// too long, reset
+					state = 0;
+				}
+			} else {
+				if (count >= minMatch)
+					return (i+y); // success
+				// too short, reset
+				state = 0;
+			}
+			break;
+		}
+	}
+	return 0;
+}
+
+//temp.checkVLine(2, 1, 640,489, 9, temp.posMax, temp.posMin)
+
+temp.checkHLine = function (maxMatch, minMatch, x, y, w, max, min) {
+	x = x/1280*temp.video.videoWidth;
+	y = y/720*temp.video.videoHeight;
+	temp.ctx.drawImage(temp.video, x,y, w,1, 0,0, w,1);
+	var color = temp.ctx.getImageData(0,0, w,1).data;
+	var state = 0;
+	var count = 0;
+	for (var i = 0; i < w; i++) {
+		var offset = i * 4;
+		var res = temp.checkColor(color[offset], color[offset+1], color[offset+2], max, min);
+		if (temp.log) console.log(i, res);
+		switch(state) {
+		case 0:
+			// look for fail
+			if (res) {
+				state = 1;
+			}
+			break;
+		case 1:
+			// look for success
+			if (!res) {
+				state = 2;
+				count = 1;
+			}
+			break;
+		case 2:
+			if (!res) {
+				count++;
+				if (count > maxMatch) {
+					// too long, reset
+					state = 0;
+				}
+			} else {
+				if (count >= minMatch)
+					return (i+y); // success
+				// too short, reset
+				state = 0;
+			}
+			break;
+		}
+	}
+	return 0;
+}
+
+//temp.checkHLine(10, 7, 266, 579, 18, temp.vicMax, temp.vicMin)
+//temp.checkHLine(10, 7, 314, 579, 18, temp.vicMax, temp.vicMin)
+//temp.checkHLine(10, 7, 728, 587, 18, temp.vicMax, temp.vicMin)
+//temp.checkHLine(9, 6, 747, 587, 18, temp.vicMax, temp.vicMin)
+
+temp.timeStr = function () {
+	var time = temp.video.currentTime;
+	var hours = Math.trunc(time / 60 / 60);
+	var minutes = Math.trunc(time / 60 % 60).toString();
+	var seconds = Math.trunc(time % 60).toString();
+	if (minutes.length < 2) minutes = '0' + minutes;
+	if (seconds.length < 2) seconds = '0' + seconds;
+	return hours + ":" + minutes + ":" + seconds;
+}
+
+
+
+
+
+
+
+
+temp.active = true;
+temp.victories = 0;
+temp.check = function() {
+	var delay = 250;
+	if (temp.checkHLine(10, 7, 266, 579, 18, temp.vicMax, temp.vicMin) &&
+		temp.checkHLine(10, 7, 314, 579, 18, temp.vicMax, temp.vicMin) &&
+		temp.checkHLine(10, 7, 728, 587, 18, temp.vicMax, temp.vicMin) &&
+		temp.checkHLine(9, 6, 747, 587, 18, temp.vicMax, temp.vicMin))
+	{
+		temp.victories++;
+		console.log(temp.timeStr()+' Victory');
+		delay = 20*60000;
+		//temp.chat("katgunnHYPERS"); temp.reward20();
+		//temp.chat("katgunnClam katgunnClam "); temp.reward20();
+		//temp.video.pause(); return;
+	}
+	if (temp.active) {
+		setTimeout(temp.check, delay);
+	} else {
+		console.log('deactivated');
+	}
+}
+temp.check();
+
+
+
+
+
+
+
+
+
+
+
+
