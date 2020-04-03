@@ -20,8 +20,59 @@ temp.hide = function () {
 
 temp.textarea = document.querySelector('textarea[data-a-target="chat-input"]');
 temp.chatButton = document.querySelector('button[data-a-target="chat-send-button"]');
+temp.setNativeValue = function (element, value) {
+  const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
+  const prototype = Object.getPrototypeOf(element);
+  const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
+  
+  if (valueSetter && valueSetter !== prototypeValueSetter) {
+  	prototypeValueSetter.call(element, value);
+  } else {
+    valueSetter.call(element, value);
+  }
+}
+temp.setText = function (msg) {
+	temp.setNativeValue(temp.textarea, msg);
+	temp.textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
 
-temp.reward20 = function () {
+temp.reward9 = function () {
+	document.querySelector('button[data-a-target="bits-button"]').click();
+	setTimeout(function () {
+
+	if (document.querySelector('button[data-a-target="cheermote-Anon1000"]')) {
+		document.querySelector('.tw-checkbox__input').click();
+	}
+	setTimeout(function () {
+	temp.setText("katgunnCheer900 ");
+	
+	setTimeout(function () {
+	temp.chatButton.click();
+	}, 1000);
+	}, 1000);
+	}, 1000);
+}
+
+temp.rewardAnon9 = function () {
+	document.querySelector('button[data-a-target="bits-button"]').click();
+	setTimeout(function () {
+
+	if (!document.querySelector('button[data-a-target="cheermote-Anon1000"]')) {
+		document.querySelector('.tw-checkbox__input').click();
+	}
+	setTimeout(function () {
+	var cheerbutt = document.querySelector('button[data-a-target="cheermote-Anon1000"]');
+	cheerbutt.setAttribute("data-key", "Anon:900")
+	cheerbutt.click()
+	
+	setTimeout(function () {
+	temp.chatButton.click();
+	}, 1000);
+	}, 1000);
+	}, 1000);
+}
+
+temp.rewardAnon20 = function () {
 	document.querySelector('button[data-a-target="bits-button"]').click();
 	setTimeout(function () {
 
@@ -40,27 +91,13 @@ temp.reward20 = function () {
 	}, 1000);
 }
 
-temp.setNativeValue = function (element, value) {
-  const valueSetter = Object.getOwnPropertyDescriptor(element, 'value').set;
-  const prototype = Object.getPrototypeOf(element);
-  const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value').set;
-  
-  if (valueSetter && valueSetter !== prototypeValueSetter) {
-  	prototypeValueSetter.call(element, value);
-  } else {
-    valueSetter.call(element, value);
-  }
-}
-temp.chat = function (msg) {
-	temp.setNativeValue(temp.textarea, msg);
-	temp.textarea.dispatchEvent(new Event('input', { bubbles: true }));
+temp.chat = function (msg, onafter) {
+	temp.setText(msg);
 	setTimeout(function () {
 		temp.chatButton.click();
+		if (onafter) setTimeout(onafter, 250);
 	}, 250);
 }
-
-temp.vicMin = [113, 174, 205];
-temp.vicMax = [137, 198, 239];
 
 temp.checkColor = function (r, g, b, max, min) {
 	if (r > max[0]) return 1;
@@ -208,45 +245,114 @@ temp.timeStr = function () {
 	return hours + ":" + minutes + ":" + seconds;
 }
 
+temp.victories = [];
+temp.nextVictory = 0;
+temp.setFirstVictory = function() {
+	if (temp.victories.length) temp.video.currentTime = temp.victories[0];
+	temp.nextVictory = 1;
+}
+temp.setNextVictory = function() {
+	if (temp.nextVictory < victories.length) {
+		temp.video.currentTime = temp.victories[temp.nextVictory];
+		temp.nextVictory++;
+	}
+}
 
-
-
-
-
-
-
-temp.active = true;
-temp.victories = 0;
+temp.vicMin = [113, 174, 205];
+temp.vicMax = [137, 198, 239];
+temp.checkWarzoneVictory = function () {
+	return temp.checkHLine(10, 7, 266, 579, 18, temp.vicMax, temp.vicMin) // W
+	&& temp.checkHLine(10, 7, 314, 579, 18, temp.vicMax, temp.vicMin) // W
+	&& temp.checkHLine(10, 7, 728, 587, 18, temp.vicMax, temp.vicMin) // V
+	&& temp.checkHLine(9, 6, 747, 587, 18, temp.vicMax, temp.vicMin) // V
+}
+temp.capMin = [131, 127, 121];
+temp.capMax = [166, 163, 159];
+temp.checkCaptured = function () {
+	return temp.checkHLine(5, 3, 227, 565, 10, temp.capMax, temp.capMin) // C
+	&& temp.checkHLine(6, 4, 276, 561, 10, temp.capMax, temp.capMin) // P
+	&& temp.checkHLine(5, 3, 320, 563, 10, temp.capMax, temp.capMin) // U
+	&& temp.checkHLine(5, 3, 334, 563, 10, temp.capMax, temp.capMin) // U
+}
+temp.kilMin = [137, 137, 137];
+temp.kilMax = [238, 238, 238];
+temp.checkKilledBy = function () {
+	return temp.checkHLine(2, 1, 609, 610, 5, temp.kilMax, temp.kilMin) // K
+	&& temp.checkHLine(2, 1, 623, 618, 5, temp.kilMax, temp.kilMin) // l
+	&& temp.checkHLine(2, 1, 645, 609, 5, temp.kilMax, temp.kilMin) // d
+	&& temp.checkHLine(3, 1, 654, 611, 5, temp.kilMax, temp.kilMin) // B
+}
+temp.bacMin = [156, 156, 156];
+temp.bacMax = [243, 243, 243];
+temp.checkBackToBase = function () {
+	return temp.checkHLine(2, 1, 826, 638, 5, temp.bacMax, temp.bacMin) // b
+	&& temp.checkHLine(2, 1, 852, 633, 5, temp.bacMax, temp.bacMin) // k
+	&& temp.checkHLine(2, 1, 865, 638, 5, temp.bacMax, temp.bacMin) // t
+	&& temp.checkHLine(3, 1, 884, 638, 5, temp.bacMax, temp.bacMin) // b
+}
+temp.checkBringingYouHome = function () {
+	return temp.checkHLine(2, 1, 760, 638, 5, temp.bacMax, temp.bacMin) // b
+	&& temp.checkVLine(2, 1, 765, 632, 5, temp.bacMax, temp.bacMin) // b
+	&& temp.checkHLine(2, 1, 807, 638, 5, temp.bacMax, temp.bacMin) // n
+	&& temp.checkHLine(2, 1, 847, 638, 5, temp.bacMax, temp.bacMin) // u
+	&& temp.checkHLine(2, 1, 855, 638, 5, temp.bacMax, temp.bacMin) // h
+}
+temp.checkRedeployment = function () {
+	return temp.checkHLine(2, 1, 812, 638, 5, temp.bacMax, temp.bacMin) // r
+	&& temp.checkHLine(2, 1, 854, 638, 5, temp.bacMax, temp.bacMin) // l
+	&& temp.checkHLine(2, 1, 880, 638, 5, temp.bacMax, temp.bacMin) // m
+	&& temp.checkHLine(2, 1, 908, 638, 5, temp.bacMax, temp.bacMin) // t
+}
+temp.gulMin = [36, 168, 187];
+temp.gulMax = [101, 234, 247];
+temp.checkGulagWinner = function () {
+	return temp.checkHLine(4, 3, 541, 161, 8, temp.gulMax, temp.gulMin) // G
+	&& temp.checkHLine(5, 3, 576, 161, 8, temp.gulMax, temp.gulMin) // L
+	&& temp.checkHLine(5, 3, 654, 161, 8, temp.gulMax, temp.gulMin) // I
+	&& temp.checkHLine(4, 3, 733, 154, 8, temp.gulMax, temp.gulMin) // !
+}
+temp.timeout = undefined;
+temp.gulagEnable = false;
+temp.gulag = false;
+temp.gulagCount = 0;
+temp.gulagWins = 0;
+temp.gulagLosses = 0;
 temp.check = function() {
 	var delay = 250;
-	if (temp.checkHLine(10, 7, 266, 579, 18, temp.vicMax, temp.vicMin) &&
-		temp.checkHLine(10, 7, 314, 579, 18, temp.vicMax, temp.vicMin) &&
-		temp.checkHLine(10, 7, 728, 587, 18, temp.vicMax, temp.vicMin) &&
-		temp.checkHLine(9, 6, 747, 587, 18, temp.vicMax, temp.vicMin))
-	{
-		temp.victories++;
+	if (temp.checkWarzoneVictory()) {
+		temp.victories.push(temp.video.currentTime);
 		console.log(temp.timeStr()+' Victory');
-		delay = 20*60000;
-		//temp.chat("katgunnHYPERS"); temp.reward20();
-		//temp.chat("katgunnClam katgunnClam "); temp.reward20();
+		delay = 5*60000;
+		//temp.chat("katgunnClam x20 ", temp.rewardAnon20);
+		//temp.chat("katgunnGG", temp.rewardAnon20);
+		//temp.rewardAnon20();
 		//temp.video.pause(); return;
-	}
-	if (temp.active) {
-		setTimeout(temp.check, delay);
-	} else {
-		console.log('deactivated');
+	} else if (temp.gulagEnable) {
+	if (temp.gulag) {
+		if (temp.checkGulagWinner() || temp.checkRedeployment()) {
+			temp.gulagWins++;
+			console.log(temp.timeStr()+' Gulag Win ' + temp.gulagWins + '-' + temp.gulagLosses);
+			//temp.chat("katgunnHYPERS  goolag " + temp.gulagWins + '-' + temp.gulagLosses);
+			temp.gulag = false;
+		} else if (temp.checkBackToBase() || temp.checkBringingYouHome()) {
+			temp.gulagLosses++;
+			console.log(temp.timeStr()+' Gulag Loss ' + temp.gulagWins + '-' + temp.gulagLosses);
+			//temp.chat("katgunnFP goolag " + temp.gulagWins + '-' + temp.gulagLosses);
+			//temp.rewardAnon9();
+			temp.gulag = false;
+		}
+	} else if (temp.checkCaptured()) {
+		console.log(temp.timeStr()+' Captured');
+		temp.gulag = true;
+		temp.gulagCount++;
+	} }
+	temp.timeout = setTimeout(temp.check, delay);
+}
+temp.stop = function () {
+	if (temp.timeout) {
+		clearTimeout(temp.timeout);
+		temp.timeout = undefined;
 	}
 }
 temp.check();
-
-
-
-
-
-
-
-
-
-
-
 
