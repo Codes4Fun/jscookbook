@@ -1,0 +1,137 @@
+
+<html>
+<body>
+	<canvas></canvas>
+	<script src="solver.js"></script>
+	<script>
+		var canvas=document.querySelector('canvas');
+		var ctx=canvas.getContext('2d');
+		var cp=[
+			{ x: 50,y: 100 },
+			{ x: 50,y: 50 },
+			{ x: 150,y: 50 },
+			{ x: 150,y: 100 }
+		];
+		var op=[
+			{ x: 50,y: 100 },
+			{ x: 75.93,y: 66.67 },
+			{ x: 124.07,y: 66.67 },
+			{ x: 150,y: 100 }
+		];
+		function getPoint(t) {
+			let it=1-t;
+			var ax=cp[0].x*it+cp[1].x*t;
+			var ay=cp[0].y*it+cp[1].y*t;
+			var bx=cp[1].x*it+cp[2].x*t;
+			var by=cp[1].y*it+cp[2].y*t;
+			var cx=cp[2].x*it+cp[3].x*t;
+			var cy=cp[2].y*it+cp[3].y*t;
+			var dx=ax*it+bx*t;
+			var dy=ay*it+by*t;
+			var ex=bx*it+cx*t;
+			var ey=by*it+cy*t;
+			var x=dx*it+ex*t;
+			var y=dy*it+ey*t;
+			return { x: x,y: y };
+		}
+		function drawCurve() {
+			ctx.clearRect(0,0,canvas.width,canvas.height);
+			// lines
+			ctx.beginPath();
+			ctx.moveTo(cp[0].x,cp[0].y);
+			for(var i=1;i<cp.length;i++) {
+				ctx.lineTo(cp[i].x,cp[i].y);
+			}
+			ctx.strokeStyle="gray";
+			ctx.stroke();
+			// curves
+			ctx.beginPath();
+			ctx.moveTo(cp[0].x,cp[0].y);
+			for(var i=1;i<32;i++) {
+				var t=i/31;
+				var point=getPoint(t);
+				ctx.lineTo(point.x,point.y);
+			}
+			ctx.strokeStyle="black";
+			ctx.stroke();
+			ctx.fillStyle="red";
+			for(var i=0;i<op.length;i++)
+				ctx.fillRect(op[i].x-4,op[i].y-4,8,8);
+		}
+		function findPoint(x,y) {
+			for(var i=0;i<op.length;i++) {
+				var dx=Math.abs(x-op[i].x);
+				var dy=Math.abs(y-op[i].y);
+				if(dx<4&&dy<4)
+					return i;
+			}
+			return -1;
+		}
+		let solve2 = generateSolver(2);
+		function solveMiddle() {
+			var t1=1/3;
+			var t2=2/3;
+			var d = [];
+			d.push([
+				3*(1-t1)*(1-t1)*t1,
+				3*(1-t1)*t1*t1
+			]);
+			d.push([
+				3*(1-t2)*(1-t2)*t2,
+				3*(1-t2)*t2*t2
+			]);
+
+			// X axis
+			var o=[];
+			o.push(op[1].x - op[3].x*t1*t1*t1 - op[0].x*(1-t1)*(1-t1)*(1-t1));
+			o.push(op[2].x - op[3].x*t2*t2*t2 - op[0].x*(1-t2)*(1-t2)*(1-t2));
+			var s = solve2({d:d, o:o});
+			cp[1].x = s[0];
+			cp[2].x = s[1];
+
+			// Y axis
+			var o=[];
+			o.push(op[1].y - op[3].y*t1*t1*t1 - op[0].y*(1-t1)*(1-t1)*(1-t1));
+			o.push(op[2].y - op[3].y*t2*t2*t2 - op[0].y*(1-t2)*(1-t2)*(1-t2));
+			var s = solve2({d:d, o:o});
+			cp[1].y = s[0];
+			cp[2].y = s[1];
+		}
+		var index=-1;
+		function onmousedown(e) {
+			let x=e.x-e.originalTarget.offsetLeft;
+			let y=e.y-e.originalTarget.offsetTop;
+			index=findPoint(x,y);
+			if(index!=-1) {
+				console.log(index);
+			}
+		}
+		function onmouseup(e) {
+			index=-1;
+		}
+		function onmousemove(e) {
+			if(index==-1)
+				return;
+			let x=e.x-e.originalTarget.offsetLeft;
+			let y=e.y-e.originalTarget.offsetTop;
+			if(x<4) x=4;
+			if(y<4) y=4;
+			if(x>canvas.width-4) x=canvas.width-4;
+			if(y>canvas.height-4) y=canvas.height-4;
+			op[index].x=x;
+			op[index].y=y;
+			if(index==0||index==cp.length-1) {
+				cp[index].x=op[index].x;
+				cp[index].y=op[index].y;
+			}
+			solveMiddle();
+			drawCurve();
+		}
+		canvas.onmousedown=onmousedown;
+		canvas.onmousemove=onmousemove;
+		canvas.onmouseup=onmouseup;
+		drawCurve();
+	</script>
+</body>
+</html>
+
